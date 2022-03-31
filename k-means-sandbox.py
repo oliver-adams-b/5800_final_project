@@ -7,8 +7,8 @@ def generate_cluster(x, y, var, count):
     dy = np.random.normal(0, var, count)
     return np.array([dx, dy]).reshape((count, 2)) + [x, y]
    
-def generate_data(means, count):
-    clusters = [generate_cluster(x, y, 10, count) for x, y in means]
+def generate_data(means, stds, count):
+    clusters = [generate_cluster(x[0], x[1], s, count) for x, s in zip(means, stds)]
     data = np.append(clusters[0], clusters[1], axis = 0)
     
     for i in range(2, len(means)):
@@ -54,7 +54,7 @@ def generate_initial_centroids_from_data(data, k):
 def k_means(data, 
             init_centroids, 
             max_num_steps, 
-            min_delta = 0.01):
+            min_delta = 0.001):
     
     prev_centroids = init_centroids
     centroids = init_centroids
@@ -87,13 +87,20 @@ def k_means(data,
     return centroids
     
 #generate some test clusters
-k = 4
-means = np.random.randint(-100, 100, (k, 2))
+k = 8
 
-data = generate_data(means, 200)
+#randomly generate the locations of the random clusters, a set of k points on the plane
+means = np.random.randint(-100, 100, (k, 2))
+#randombly generate the variance of the cluster surrounding each point
+stds = np.random.randint(1, 10, (k,))
+
+#now generate the test data from the locations and variances:
+data = generate_data(means,
+                     stds, 
+                     200)
 disp_data(data)
 
-#now display the bounding box, where we initialize the initial centroids
+#now display the bounding box:
 minx, miny, maxx, maxy = get_bbox_for_data(data)
 plt.hlines([miny, maxy], minx, maxx)
 plt.vlines([minx, maxx], miny, maxy)
@@ -101,9 +108,11 @@ plt.vlines([minx, maxx], miny, maxy)
 #centroids = generate_initial_centroids_from_bbox([minx, miny, maxx, maxy], k)
 centroids = generate_initial_centroids_from_data(data, k)
 
+#display the initial guess for the centroids:
 for i in range(k):
             plt.scatter(centroids[i][0], centroids[i][1], s = 100)
 
 plt.show()
-#
+
+#run k-means:
 k_means(data, centroids, 100)
