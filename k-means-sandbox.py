@@ -4,15 +4,13 @@ plt.rcParams["figure.figsize"] = (10,8)
 
 
 
-def generate_cluster(x, y, var, count):
+def generate_cluster(mean, cov, count):
     """creates a cluster of points with provided mean (x, y) and variance var"""
-    dx = np.random.normal(0, var, count)
-    dy = np.random.normal(0, var, count)
-    return np.array([dx, dy]).reshape((count, 2)) + [x, y]
+    return np.random.multivariate_normal(mean, cov, count)
    
-def generate_data(means, stds, count):
+def generate_data(means, covs, count):
     """creates a test-dataset from a list of means and standard deviations"""
-    clusters = [generate_cluster(x[0], x[1], s, count) for x, s in zip(means, stds)]
+    clusters = [generate_cluster(m, c, count) for m, c in zip(means, stds)]
     data = np.append(clusters[0], clusters[1], axis = 0)
     
     for i in range(2, len(means)):
@@ -110,7 +108,7 @@ def classify_from_centroids(data,
         for c in bins:
             l = colors[np.random.randint(len(colors))]
             disp_data(np.array(c), color = l)
-            colors.remove(l)
+            #colors.remove(l)
     
     return bins
 
@@ -127,12 +125,14 @@ if __name__ == "__main__":
         
         then we plot the classificaiton of clusters as determined from the centroids
     """
-    #generate some test clusters
-    k = 6
+    #generate k test clusters in d-dimensional space:
+    k = 5
+    d = 3
     #randomly generate the locations of the random clusters, a set of k points on the plane
-    means = np.random.randint(-100, 100, (k, 2))
+    means = np.random.randint(-100, 100, (k, d))
+    
     #randombly generate the variance of the cluster surrounding each point
-    stds = np.random.randint(1, 20, (k,))
+    stds = np.random.randint(1, 40, (k, d, d))
     
     #now generate the test data from the locations and variances:
     data = generate_data(means,
@@ -143,6 +143,7 @@ if __name__ == "__main__":
     #run k-means:
     centroids = k_means(data, k, disp = False)
     
+    print(centroids)
     #get the classification bins for the data
     class_bins = classify_from_centroids(data, centroids)
     
