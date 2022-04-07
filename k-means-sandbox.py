@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+plt.rcParams["figure.figsize"] = (10,8)
 
 def generate_cluster(x, y, var, count):
     dx = np.random.normal(0, var, count)
@@ -16,11 +16,12 @@ def generate_data(means, stds, count):
     
     return data
 
-def disp_data(cluster):
+def disp_data(cluster, 
+              color = "b"):
     plt.scatter(cluster[:, 0], 
                 cluster[:, 1], 
-                c = "b", 
-                s = 2, 
+                c = color, 
+                s = 6, 
                 alpha = 0.5)
     
 def l2(x, y):
@@ -52,31 +53,32 @@ def generate_initial_centroids_from_data(data, k):
     return np.asarray(centroids)
 
 def k_means(data, 
-            init_centroids, 
-            max_num_steps, 
-            min_delta = 0.001):
-    
+            k,
+            max_num_steps = 100, 
+            min_delta = 0.001, 
+            disp = True):
+
+    init_centroids = generate_initial_centroids_from_data(data, k)
     prev_centroids = init_centroids
     centroids = init_centroids
-    k = len(init_centroids)
-    
     
     for _ in range(max_num_steps):
         
         prev_centroids = centroids
         bins = [[c] for c in centroids]
         
+        
         for p in data:
             bins[find_nearest_centroid(p, centroids)].append(p)  
         centroids = np.array([np.mean(d, axis = 0) for d in bins])
-        disp_data(data)
-        
-        
-        for i in range(k):
-            plt.scatter(centroids[i][0], centroids[i][1], s = 100, c = "r")
 
-        plt.axis("off")
-        plt.show()
+            
+        if disp:
+            for i in range(k):
+                plt.scatter(centroids[i][0], centroids[i][1], s = 100, c = "r")
+            disp_data(data)
+            plt.axis("off")
+            plt.show()
         
         delta = np.linalg.norm(np.sum(prev_centroids-centroids, axis = 0))
     
@@ -85,34 +87,54 @@ def k_means(data,
             break
         
     return centroids
+  
     
+def classify_from_centroids(data, 
+                            centroids, 
+                            disp = True):
+    
+    bins = [[c] for c in centroids]
+    
+    for d in data:
+        bins[find_nearest_centroid(d, centroids)].append(d.tolist())
+      
+    if disp:
+        colors = ["g", "b", "c", "m", "y", "k"]
+        for c in bins:
+            l = colors[np.random.randint(len(colors))]
+            disp_data(np.array(c), color = l)
+            colors.remove(l)
+    
+    return bins
+
+
 #generate some test clusters
-k = 8
+k = 6
 
 #randomly generate the locations of the random clusters, a set of k points on the plane
 means = np.random.randint(-100, 100, (k, 2))
 #randombly generate the variance of the cluster surrounding each point
-stds = np.random.randint(1, 10, (k,))
+stds = np.random.randint(1, 20, (k,))
 
 #now generate the test data from the locations and variances:
 data = generate_data(means,
                      stds, 
-                     200)
-disp_data(data)
+                     500)
 
-#now display the bounding box:
-minx, miny, maxx, maxy = get_bbox_for_data(data)
-plt.hlines([miny, maxy], minx, maxx)
-plt.vlines([minx, maxx], miny, maxy)
-
-#centroids = generate_initial_centroids_from_bbox([minx, miny, maxx, maxy], k)
-centroids = generate_initial_centroids_from_data(data, k)
-
-#display the initial guess for the centroids:
-for i in range(k):
-            plt.scatter(centroids[i][0], centroids[i][1], s = 100)
-
-plt.show()
 
 #run k-means:
-k_means(data, centroids, 100)
+centroids = k_means(data, k, disp = False)
+
+#get the classification bins for the data
+class_bins = classify_from_centroids(data, centroids)
+
+
+#plot the results:
+for i in range(k):
+    plt.scatter(centroids[i][0], centroids[i][1], s = 100, c = "r")
+    
+plt.axis("off")
+plt.title("K-means clustering of {} random Normal Distributions".format(k))
+plt.show()
+
+
