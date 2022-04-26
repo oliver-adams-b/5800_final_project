@@ -51,7 +51,8 @@ def k_means(data,
             k,
             max_num_steps = 100, 
             min_delta = 0.001, 
-            disp = True):
+            disp = True, 
+            arguments_to_disp = [0, 1]):
 
     """
     Generates k centroids which best approximate the provided dataset. 
@@ -78,8 +79,10 @@ def k_means(data,
 
             
         if disp:
+            l, p = arguments_to_disp
             for i in range(k):
-                plt.scatter(centroids[i][0], centroids[i][1], s = 100, c = "r")
+                
+                plt.scatter(centroids[i][l], centroids[i][p], s = 100, c = "r")
             disp_data(data)
             plt.axis("off")
             plt.show()
