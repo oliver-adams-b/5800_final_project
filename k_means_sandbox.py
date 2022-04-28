@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams["figure.figsize"] = (10,8)
-
-
+import tqdm 
 
 def generate_cluster(mean, cov, count):
     """creates a cluster of points with provided mean (x, y) and variance var"""
@@ -10,7 +9,7 @@ def generate_cluster(mean, cov, count):
    
 def generate_data(means, covs, count):
     """creates a test-dataset from a list of means and standard deviations"""
-    clusters = [generate_cluster(m, c, count) for m, c in zip(means, stds)]
+    clusters = [generate_cluster(m, c, count) for m, c in zip(means, covs)]
     data = np.append(clusters[0], clusters[1], axis = 0)
     
     for i in range(2, len(means)):
@@ -47,55 +46,103 @@ def generate_initial_centroids_from_data(data, k):
         centroids.append(np.mean(data[np.random.choice(range(len(data)), (m))], axis = 0))
     return np.asarray(centroids)
 
-def k_means(data, 
-            k,
-            max_num_steps = 100, 
-            min_delta = 0.001, 
-            disp = True, 
-            arguments_to_disp = [0, 1]):
-
+def generate_initial_centroids_from_bbox(data, k):
     """
-    Generates k centroids which best approximate the provided dataset. 
-    """
+    Randomly samples from the bounding box which contains the data
     
+    Returns a list of k points which act as our first guess for the centroids. 
+    """
+    centroids = [[] for _ in range(k)]
+    
+    n, d = data.shape
+    for i in range(d):
+        mini, maxi = np.min(data[:, i]), np.max(data[:, i])
+        for j in range(k):
+            rand = np.random.rand(1)[0] 
+            centroids[j].append((rand*(maxi-mini)) + mini)
+            
+    return np.array(centroids)
+        
+    
+
+def draw(data, k, bins, centroids, prev_centroids):
+    """ Plotting the data on 2D plane at each step of k_means until max_num_steps
+    are reached or the centroids change position less than the value of delta """
+   
+    colors = ["g", "b", "c", "m", "y", "k"]
+    for i in range(k):
+        disp_data(np.array(bins[i]), color = colors[i])
+        plt.scatter(centroids[i][0], centroids[i][1], s = 100, c = colors[i], edgecolors='black')
+        x_values = [centroids[i][0], prev_centroids[i][0]]
+        y_values = [centroids[i][1], prev_centroids[i][1]]
+        plt.plot(x_values, y_values, c=colors[i])
+        
+    plt.axis("off")
+    plt.show()
+
+def k_means(data, k, 
+            init_function = generate_initial_centroids_from_data,
+            max_num_steps = 100, 
+            min_delta = 0.0001, 
+            disp = False):
+
     """creates our initial guess for the location of the centroids"""
-    init_centroids = generate_initial_centroids_from_data(data, k)
+    init_centroids = init_function(data, k)
     
     """keeps track of the location of the centroids for the previous iter, so that we
     can measure convergence between subsequent iterations"""
     prev_centroids = init_centroids 
     
     centroids = init_centroids
+
     
     for _ in range(max_num_steps):
         
-        prev_centroids = centroids
         bins = [[c] for c in centroids]
-        
+    
+        prev_centroids = centroids
         
         for p in data:
             bins[find_nearest_centroid(p, centroids)].append(p)  
+        
         centroids = np.array([np.mean(d, axis = 0) for d in bins])
 
-            
         if disp:
-            l, p = arguments_to_disp
-            for i in range(k):
-                
-                plt.scatter(centroids[i][l], centroids[i][p], s = 100, c = "r")
-            disp_data(data)
-            plt.axis("off")
-            plt.show()
+            draw(data, k, bins, centroids, prev_centroids)
         
         delta = np.linalg.norm(np.sum(prev_centroids-centroids, axis = 0))
     
         if delta < min_delta:
-            print("min delta reached: {}".format(delta))
+            if disp:
+                print("min delta reached: {}".format(delta))
             break
         
-    return centroids
-  
+        
+    return centroids, bins
+ 
+ 
+def SSE(data, centroids):
+    """
+    Returns the sum of the squared error for the data and clusters
+    """
+    err = 0
+    for p in data:
+        nearest_centroid = centroids[find_nearest_centroid(p, centroids)]
+        err = err + l2(p, nearest_centroid)
+    return err
+   
+def elbow_method(data, 
+                 up_to_k = 10,
+                 disp = True):
     
+    errors = []
+    for k in tqdm.trange(1, up_to_k):
+        temp_centroids = k_means(data, k, disp = False)
+        errors.append(SSE(data, temp_centroids))
+    
+    plt.scatter(list(range(1, up_to_k)), errors)
+    plt.show()
+        
 def classify_from_centroids(data, 
                             centroids, 
                             disp = True):
@@ -141,12 +188,14 @@ if __name__ == "__main__":
     data = generate_data(means,
                          stds, 
                          500)
-
+    
+    # df = pd.read_csv("bike-sharing.csv")
+    # data = df.to_numpy()
+    # data = data[:500, 4:]
 
     #run k-means:
-    centroids = k_means(data, k, disp = False)
+    centroids, bins = k_means(data, k, disp = True)
     
-    print(centroids)
     #get the classification bins for the data
     class_bins = classify_from_centroids(data, centroids)
     
