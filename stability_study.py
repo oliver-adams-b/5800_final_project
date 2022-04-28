@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import tqdm
-import k_means_sandbox as kms
+import k_means_library as kml
 
 n = 400
 bbox_performance = []
