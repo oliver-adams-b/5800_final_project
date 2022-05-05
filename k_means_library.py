@@ -100,8 +100,6 @@ def k_means(data, k, title = " ",
     prev_centroids = init_centroids 
     
     centroids = init_centroids
-
-    
     for _ in range(max_num_steps):
         
         bins = [[c] for c in centroids]
