@@ -7,9 +7,14 @@ def generate_cluster(mean, cov, count):
     """creates a cluster of points with provided mean (x, y) and variance var"""
     return np.random.multivariate_normal(mean, cov, count)
    
-def generate_data(means, covs, count):
+def generate_data(k, d, count):
+    #randomly generate the locations of the random clusters, a set of k points on the plane
+    means = np.random.randint(-100, 100, (k, d))
+    #randombly generate the variance of the cluster surrounding each point
+    stds = np.random.randint(1, 40, (k, d, d))
+    
     """creates a test-dataset from a list of means and standard deviations"""
-    clusters = [generate_cluster(m, c, count) for m, c in zip(means, covs)]
+    clusters = [generate_cluster(m, c, count) for m, c in zip(means, stds)]
     data = np.append(clusters[0], clusters[1], axis = 0)
     
     for i in range(2, len(means)):
@@ -174,37 +179,19 @@ if __name__ == "__main__":
         of centroids which best "cluster" the dataset. 
         
         then we plot the classificaiton of clusters as determined from the centroids
-    """
     #generate k test clusters in d-dimensional space:
+    """
+    
     k = 5
     d = 3
-    #randomly generate the locations of the random clusters, a set of k points on the plane
-    means = np.random.randint(-100, 100, (k, d))
+    data = generate_data(k, d, 500)
     
-    #randombly generate the variance of the cluster surrounding each point
-    stds = np.random.randint(1, 40, (k, d, d))
-    
-    #now generate the test data from the locations and variances:
-    data = generate_data(means,
-                         stds, 
-                         500)
-    
-    # df = pd.read_csv("bike-sharing.csv")
-    # data = df.to_numpy()
-    # data = data[:500, 4:]
-
     #run k-means:
-    centroids, bins = k_means(data, k, disp = True)
-    
-    #get the classification bins for the data
-    class_bins = classify_from_centroids(data, centroids)
+    centroids, bins = k_means(data, k)
     
     #plot the results:
     for i in range(k):
         plt.scatter(centroids[i][0], centroids[i][1], s = 100, c = "r")
-        
-    plt.axis("off")
-    plt.title("K-means clustering of {} random Normal Distributions".format(k))
-    plt.show()
+    plt.axis("off") and plt.show()
 
 
