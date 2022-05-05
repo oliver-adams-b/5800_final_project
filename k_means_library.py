@@ -65,7 +65,7 @@ def generate_initial_centroids_from_bbox(data, k):
         
     
 
-def draw(data, k, bins, centroids, prev_centroids):
+def draw(data, k, bins, title, centroids, prev_centroids):
     """ Plotting the data on 2D plane at each step of k_means until max_num_steps
     are reached or the centroids change position less than the value of delta """
    
@@ -76,11 +76,12 @@ def draw(data, k, bins, centroids, prev_centroids):
         x_values = [centroids[i][0], prev_centroids[i][0]]
         y_values = [centroids[i][1], prev_centroids[i][1]]
         plt.plot(x_values, y_values, c=colors[i])
-        
+    
+    plt.title(title)
     plt.axis("off")
     plt.show()
 
-def k_means(data, k, 
+def k_means(data, k, title = " ",
             init_function = generate_initial_centroids_from_data,
             max_num_steps = 100, 
             min_delta = 0.0001, 
@@ -108,7 +109,7 @@ def k_means(data, k,
         centroids = np.array([np.mean(d, axis = 0) for d in bins])
 
         if disp:
-            draw(data, k, bins, centroids, prev_centroids)
+            draw(data, k, bins, title, centroids, prev_centroids)
         
         delta = np.linalg.norm(np.sum(prev_centroids-centroids, axis = 0))
     
@@ -137,7 +138,7 @@ def elbow_method(data,
     
     errors = []
     for k in tqdm.trange(1, up_to_k):
-        temp_centroids = k_means(data, k, disp = False)
+        temp_centroids, _ = k_means(data, k,disp = False)
         errors.append(SSE(data, temp_centroids))
     
     plt.scatter(list(range(1, up_to_k)), errors)
